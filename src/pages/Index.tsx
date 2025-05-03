@@ -1,10 +1,17 @@
+
 import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ChatBot from "@/components/ChatBot";
 import Documentation from "@/components/Documentation";
 import PDFDownloadButton from "@/components/PDFDownloadButton";
-import { GPUInstance, GPURequirements, fetchGPUInstances, fetchGPUInstancesByRegion, findMatchingGPUs } from "@/services/api";
+import { 
+  GPUInstance, 
+  GPURequirements, 
+  fetchGPUInstances, 
+  fetchGPUInstancesByRegion, 
+  findMatchingGPUs 
+} from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Search, MessageSquare, Info } from "lucide-react";
 
@@ -83,7 +90,7 @@ const Index = () => {
         });
         
         // If multiple results, suggest using the chatbot
-        if (results.length > 1) {
+        if (results.length > 3) {
           setTimeout(() => {
             toast({
               title: "Need Help Choosing?",
@@ -118,7 +125,7 @@ const Index = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold">GPU Genius Finder</h1>
-              <p className="text-gray-300">Find the perfect GPU cloud instance for your needs</p>
+              <p className="text-gray-300">Find the perfect GPU cloud instance for your AI/ML workloads</p>
             </div>
             <div className="flex items-center gap-3">
               {hasSearched && filteredResults.length > 0 && (
@@ -135,9 +142,9 @@ const Index = () => {
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             <div className="p-6 md:p-8 bg-gradient-to-r from-tech-blue to-tech-purple text-white">
               <h2 className="text-2xl md:text-3xl font-bold mb-2">Find Your Ideal GPU Solution</h2>
-              <p className="text-gray-100 max-w-2xl">
-                Tell us what you need and we'll find the perfect GPU instance for your workload.
-                Whether it's AI training, inference, rendering, or general GPU computing, we've got you covered.
+              <p className="text-gray-100 max-w-3xl">
+                Specify your AI/ML workload characteristics and we'll find the perfect GPU instance for you.
+                Whether it's training large language models, running inference, rendering, or general computing, we'll match you with the right resources.
               </p>
             </div>
             <div className="p-6">
@@ -157,41 +164,45 @@ const Index = () => {
           </section>
         ) : hasSearched ? (
           <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <ResultsDisplay results={filteredResults} onSelectGPU={handleSelectGPU} />
+            <ResultsDisplay 
+              results={filteredResults} 
+              onSelectGPU={handleSelectGPU} 
+              searchCriteria={searchCriteria}
+            />
           </section>
         ) : (
           <section className="text-center py-12">
-            <h3 className="text-2xl font-bold mb-4">Ready to Find Your GPU Solution</h3>
+            <h3 className="text-2xl font-bold mb-4">Ready to Find Your Ideal GPU Solution</h3>
             <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-              Fill out the form above with your requirements and we'll show you the best matching GPU instances.
-              You can filter by vCPUs, RAM, budget, region, and GPU type.
+              Tell us about your AI/ML workload, and we'll recommend the right GPU instances.
+              You can filter by model type, dataset size, training vs. inference needs, and more.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-tech-blue mb-4 mx-auto">
                   <Search className="h-6 w-6" />
                 </div>
-                <h4 className="text-lg font-medium mb-2">Search</h4>
+                <h4 className="text-lg font-medium mb-2">Specify Workload</h4>
                 <p className="text-gray-500 text-sm">
-                  Specify your requirements and find GPU instances that match your needs
+                  Tell us what you need - from model type to dataset size - and we'll find matching GPUs
                 </p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-tech-purple mb-4 mx-auto">
                   <MessageSquare className="h-6 w-6" />
                 </div>
-                <h4 className="text-lg font-medium mb-2">Chat</h4>
+                <h4 className="text-lg font-medium mb-2">Get Recommendations</h4>
                 <p className="text-gray-500 text-sm">
-                  Ask our assistant for help with finding the right GPU for your specific workload
+                  Receive personalized GPU recommendations tailored to your specific workload needs
                 </p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center text-tech-cyan mb-4 mx-auto">
                   <Info className="h-6 w-6" />
                 </div>
-                <h4 className="text-lg font-medium mb-2">Compare</h4>
+                <h4 className="text-lg font-medium mb-2">Compare Options</h4>
                 <p className="text-gray-500 text-sm">
-                  View detailed comparisons of GPU instances to make an informed decision
+                  Compare GPU instances side by side and download detailed reports for decision making
                 </p>
               </div>
             </div>

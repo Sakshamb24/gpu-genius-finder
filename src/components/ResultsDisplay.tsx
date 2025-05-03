@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { GPUInstance, sortGPUInstances } from "@/services/api";
+import { GPUInstance, GPURequirements, sortGPUInstances, getWorkloadRecommendation } from "@/services/api";
 import GPUCard from "./GPUCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -10,13 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 interface ResultsDisplayProps {
   results: GPUInstance[];
   onSelectGPU: (gpu: GPUInstance) => void;
+  searchCriteria?: GPURequirements;
 }
 
-const ResultsDisplay = ({ results, onSelectGPU }: ResultsDisplayProps) => {
+const ResultsDisplay = ({ results, onSelectGPU, searchCriteria }: ResultsDisplayProps) => {
   const [sortType, setSortType] = useState<"price" | "performance" | "value">("value");
 
   if (results.length === 0) {
@@ -38,6 +41,9 @@ const ResultsDisplay = ({ results, onSelectGPU }: ResultsDisplayProps) => {
   const bestPerformanceGPU = sortGPUInstances(results, "performance")[0];
   const bestValueGPU = sortGPUInstances(results, "value")[0];
 
+  // Get recommendation if search criteria is available
+  const recommendation = searchCriteria ? getWorkloadRecommendation(searchCriteria) : '';
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -58,6 +64,15 @@ const ResultsDisplay = ({ results, onSelectGPU }: ResultsDisplayProps) => {
           </Select>
         </div>
       </div>
+      
+      {recommendation && (
+        <Alert>
+          <InfoIcon className="h-4 w-4" />
+          <AlertDescription>
+            {recommendation}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="grid" className="w-full">
         <TabsList className="mb-4">
@@ -89,9 +104,12 @@ const ResultsDisplay = ({ results, onSelectGPU }: ResultsDisplayProps) => {
                   <th className="px-4 py-3 text-left">Description</th>
                   <th className="px-4 py-3 text-left">vCPUs</th>
                   <th className="px-4 py-3 text-left">RAM</th>
+                  <th className="px-4 py-3 text-left">Storage</th>
                   <th className="px-4 py-3 text-left">Region</th>
                   <th className="px-4 py-3 text-left">Price/Hour</th>
+                  <th className="px-4 py-3 text-left">Spot Price</th>
                   <th className="px-4 py-3 text-left">Price/Month</th>
+                  <th className="px-4 py-3 text-left">Performance</th>
                   <th className="px-4 py-3 text-left">Actions</th>
                 </tr>
               </thead>
@@ -105,9 +123,24 @@ const ResultsDisplay = ({ results, onSelectGPU }: ResultsDisplayProps) => {
                     <td className="px-4 py-3">{gpu.gpu_description}</td>
                     <td className="px-4 py-3">{gpu.vcpus}</td>
                     <td className="px-4 py-3">{gpu.ram} GB</td>
+                    <td className="px-4 py-3">{gpu.storage || 100} GB</td>
                     <td className="px-4 py-3 capitalize">{gpu.region}, {gpu.country}</td>
                     <td className="px-4 py-3">${gpu.price_per_hour.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      {gpu.is_spot_available 
+                        ? <span className="text-green-600">${gpu.price_per_spot.toFixed(2)}</span>
+                        : <span className="text-muted-foreground">N/A</span>
+                      }
+                    </td>
                     <td className="px-4 py-3 font-bold">${gpu.price_per_month}</td>
+                    <td className="px-4 py-3">
+                      {gpu.performance_score 
+                        ? <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+                            {gpu.performance_score}/100
+                          </span>
+                        : 'N/A'
+                      }
+                    </td>
                     <td className="px-4 py-3">
                       <button 
                         className="text-primary hover:underline" 
