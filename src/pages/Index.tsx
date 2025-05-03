@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ChatBot from "@/components/ChatBot";
 import { GPUInstance, GPURequirements, fetchGPUInstances, findMatchingGPUs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { Search, MessageSquare, Info } from "lucide-react";
 
 const Index = () => {
   const { toast } = useToast();
