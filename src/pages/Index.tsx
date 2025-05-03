@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ChatBot from "@/components/ChatBot";
 import Documentation from "@/components/Documentation";
+import PDFDownloadButton from "@/components/PDFDownloadButton";
 import { GPUInstance, GPURequirements, fetchGPUInstances, fetchGPUInstancesByRegion, findMatchingGPUs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Search, MessageSquare, Info } from "lucide-react";
@@ -15,6 +15,7 @@ const Index = () => {
   const [selectedGPU, setSelectedGPU] = useState<GPUInstance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchCriteria, setSearchCriteria] = useState<GPURequirements | undefined>(undefined);
   
   useEffect(() => {
     const loadGPUInstances = async () => {
@@ -41,6 +42,7 @@ const Index = () => {
   const handleSearch = async (criteria: GPURequirements) => {
     try {
       setIsLoading(true);
+      setSearchCriteria(criteria); // Store search criteria for PDF generation
       
       // If a preferred region is specified and not "any", fetch data for that region
       let instances = gpuInstances;
@@ -118,7 +120,10 @@ const Index = () => {
               <h1 className="text-2xl md:text-3xl font-bold">GPU Genius Finder</h1>
               <p className="text-gray-300">Find the perfect GPU cloud instance for your needs</p>
             </div>
-            <div>
+            <div className="flex items-center gap-3">
+              {hasSearched && filteredResults.length > 0 && (
+                <PDFDownloadButton results={filteredResults} searchRequirements={searchCriteria} />
+              )}
               <Documentation />
             </div>
           </div>
