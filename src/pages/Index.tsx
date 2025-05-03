@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ChatBot from "@/components/ChatBot";
+import Documentation from "@/components/Documentation";
 import { GPUInstance, GPURequirements, fetchGPUInstances, fetchGPUInstancesByRegion, findMatchingGPUs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Search, MessageSquare, Info } from "lucide-react";
@@ -78,6 +79,16 @@ const Index = () => {
           title: "Search Complete",
           description: `Found ${results.length} GPU instances matching your criteria.`,
         });
+        
+        // If multiple results, suggest using the chatbot
+        if (results.length > 1) {
+          setTimeout(() => {
+            toast({
+              title: "Need Help Choosing?",
+              description: "Use the chatbot assistant to help you select the best GPU for your needs.",
+            });
+          }, 2000);
+        }
       }
     } catch (error) {
       console.error("Error during search:", error);
@@ -106,6 +117,9 @@ const Index = () => {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold">GPU Genius Finder</h1>
               <p className="text-gray-300">Find the perfect GPU cloud instance for your needs</p>
+            </div>
+            <div>
+              <Documentation />
             </div>
           </div>
         </div>
@@ -195,7 +209,7 @@ const Index = () => {
         </div>
       </footer>
       
-      <ChatBot selectedGPU={selectedGPU} />
+      <ChatBot selectedGPU={selectedGPU} filteredResults={filteredResults} />
     </div>
   );
 };

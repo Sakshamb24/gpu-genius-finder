@@ -2,7 +2,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -11,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { MessageSquare, Send, Info, Search } from "lucide-react";
+import { MessageSquare, Send, Info } from "lucide-react";
 import { GPUInstance } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,9 +23,10 @@ interface Message {
 
 interface ChatBotProps {
   selectedGPU?: GPUInstance | null;
+  filteredResults?: GPUInstance[];
 }
 
-const ChatBot = ({ selectedGPU }: ChatBotProps) => {
+const ChatBot = ({ selectedGPU, filteredResults = [] }: ChatBotProps) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -40,6 +40,7 @@ const ChatBot = ({ selectedGPU }: ChatBotProps) => {
   
   const [inputMessage, setInputMessage] = useState("");
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [hasShownMultipleOptions, setHasShownMultipleOptions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Scroll to bottom whenever messages change
@@ -60,6 +61,15 @@ const ChatBot = ({ selectedGPU }: ChatBotProps) => {
       );
     }
   }, [selectedGPU, isSheetOpen]);
+
+  // Show message when multiple results are found
+  useEffect(() => {
+    if (filteredResults.length > 1 && isSheetOpen && !hasShownMultipleOptions) {
+      const message = `I see you have ${filteredResults.length} GPU options available. Would you prefer to optimize for cost or performance? Or would you like me to recommend the best value option?`;
+      addMessage(message, false);
+      setHasShownMultipleOptions(true);
+    }
+  }, [filteredResults, isSheetOpen, hasShownMultipleOptions]);
 
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
@@ -89,8 +99,67 @@ const ChatBot = ({ selectedGPU }: ChatBotProps) => {
     // Simple response logic based on keywords
     const lowerCaseMessage = userMessage.toLowerCase();
     
+    // Response for multiple options scenario
+    if ((filteredResults.length > 1) && 
+        (lowerCaseMessage.includes("cost") || 
+        lowerCaseMessage.includes("cheap") || 
+        lowerCaseMessage.includes("price") || 
+        lowerCaseMessage.includes("budget"))) {
+      setTimeout(() => {
+        // Find the cheapest option
+        const sortedByPrice = [...filteredResults].sort((a, b) => a.price_per_month - b.price_per_month);
+        const cheapestOption = sortedByPrice[0];
+        
+        addMessage(
+          `For the most cost-effective option, I recommend the ${cheapestOption.resource_class.toUpperCase()} with ${cheapestOption.gpu_description} at $${cheapestOption.price_per_month}/month. It offers ${cheapestOption.vcpus} vCPUs and ${cheapestOption.ram}GB RAM. Would you like more details about this option?`,
+          false
+        );
+      }, 1000);
+    }
+    else if ((filteredResults.length > 1) && 
+            (lowerCaseMessage.includes("performance") || 
+            lowerCaseMessage.includes("power") || 
+            lowerCaseMessage.includes("fast") || 
+            lowerCaseMessage.includes("strong"))) {
+      setTimeout(() => {
+        // Calculate a simple performance score based on vCPUs and RAM
+        const sortedByPerf = [...filteredResults].sort((a, b) => {
+          const perfA = a.vcpus * a.ram;
+          const perfB = b.vcpus * b.ram;
+          return perfB - perfA; // Highest first
+        });
+        
+        const bestPerformance = sortedByPerf[0];
+        
+        addMessage(
+          `For the highest performance, I recommend the ${bestPerformance.resource_class.toUpperCase()} with ${bestPerformance.gpu_description}. With ${bestPerformance.vcpus} vCPUs and ${bestPerformance.ram}GB RAM, it's our most powerful option at $${bestPerformance.price_per_month}/month. Would you like more details?`,
+          false
+        );
+      }, 1000);
+    }
+    else if ((filteredResults.length > 1) && 
+            (lowerCaseMessage.includes("value") || 
+            lowerCaseMessage.includes("recommend") || 
+            lowerCaseMessage.includes("best") || 
+            lowerCaseMessage.includes("optimal"))) {
+      setTimeout(() => {
+        // Calculate value (performance per dollar)
+        const sortedByValue = [...filteredResults].sort((a, b) => {
+          const valueA = (a.vcpus * a.ram) / a.price_per_month;
+          const valueB = (b.vcpus * b.ram) / b.price_per_month;
+          return valueB - valueA; // Highest first
+        });
+        
+        const bestValue = sortedByValue[0];
+        
+        addMessage(
+          `For the best overall value, I recommend the ${bestValue.resource_class.toUpperCase()} with ${bestValue.gpu_description}. It offers a great balance of performance (${bestValue.vcpus} vCPUs, ${bestValue.ram}GB RAM) for the price ($${bestValue.price_per_month}/month). Would you like to know more about this option?`,
+          false
+        );
+      }, 1000);
+    }
     // Response about pricing or cost
-    if (lowerCaseMessage.includes("price") || lowerCaseMessage.includes("cost") || lowerCaseMessage.includes("budget")) {
+    else if (lowerCaseMessage.includes("price") || lowerCaseMessage.includes("cost") || lowerCaseMessage.includes("budget")) {
       setTimeout(() => {
         addMessage(
           "Our GPU instances range from $0.30/hour for entry-level options to $10+/hour for high-end A100 GPUs. " +
