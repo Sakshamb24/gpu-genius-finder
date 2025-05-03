@@ -16,11 +16,19 @@ interface ApiResponse {
   data: GPUInstance[];
 }
 
-const API_URL = 'https://customer.acecloudhosting.com/api/v1/pricing?is_gpu=true&resource=instances';
+// Updated API URL to include a default region parameter
+const BASE_API_URL = 'https://customer.acecloudhosting.com/api/v1/pricing';
 
 export const fetchGPUInstances = async (): Promise<GPUInstance[]> => {
   try {
-    const response = await fetch(API_URL);
+    // Adding required region parameter to the API URL
+    const params = new URLSearchParams({
+      is_gpu: 'true',
+      resource: 'instances',
+      region: 'ap-south-mum-1' // Default to Mumbai region
+    });
+    
+    const response = await fetch(`${BASE_API_URL}?${params.toString()}`);
     
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
@@ -42,6 +50,29 @@ export interface GPURequirements {
   preferredGPUType?: string;
   useCase?: string;
 }
+
+// Also update fetchGPUInstances to use the preferredRegion when provided
+export const fetchGPUInstancesByRegion = async (region: string = 'ap-south-mum-1'): Promise<GPUInstance[]> => {
+  try {
+    const params = new URLSearchParams({
+      is_gpu: 'true',
+      resource: 'instances',
+      region: region
+    });
+    
+    const response = await fetch(`${BASE_API_URL}?${params.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data: ApiResponse = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error(`Error fetching GPU instances for region ${region}:`, error);
+    return [];
+  }
+};
 
 export const findMatchingGPUs = (
   gpuInstances: GPUInstance[],

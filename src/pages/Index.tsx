@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import SearchForm from "@/components/SearchForm";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import ChatBot from "@/components/ChatBot";
-import { GPUInstance, GPURequirements, fetchGPUInstances, findMatchingGPUs } from "@/services/api";
+import { GPUInstance, GPURequirements, fetchGPUInstances, fetchGPUInstancesByRegion, findMatchingGPUs } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { Search, MessageSquare, Info } from "lucide-react";
 
@@ -18,6 +19,7 @@ const Index = () => {
     const loadGPUInstances = async () => {
       try {
         setIsLoading(true);
+        // Use the updated fetchGPUInstances function that includes the region parameter
         const instances = await fetchGPUInstances();
         setGpuInstances(instances);
         setIsLoading(false);
@@ -35,22 +37,56 @@ const Index = () => {
     loadGPUInstances();
   }, [toast]);
   
-  const handleSearch = (criteria: GPURequirements) => {
-    // Find matching GPUs based on criteria
-    const results = findMatchingGPUs(gpuInstances, criteria);
-    setFilteredResults(results);
-    setHasSearched(true);
-    
-    if (results.length === 0) {
+  const handleSearch = async (criteria: GPURequirements) => {
+    try {
+      setIsLoading(true);
+      
+      // If a preferred region is specified and not "any", fetch data for that region
+      let instances = gpuInstances;
+      if (criteria.preferredRegion && criteria.preferredRegion !== 'any') {
+        // Map the user-friendly region names to API region codes
+        const regionMap: Record<string, string> = {
+          'mumbai': 'ap-south-mum-1',
+          'bangalore': 'ap-south-del-1', // Using Delhi as nearest to Bangalore
+          'us': 'us-east-at-1',
+          'eu': 'ap-south-noi-1', // Using Noida as placeholder for EU
+        };
+        
+        const regionCode = regionMap[criteria.preferredRegion] || 'ap-south-mum-1';
+        const regionSpecificInstances = await fetchGPUInstancesByRegion(regionCode);
+        
+        if (regionSpecificInstances.length > 0) {
+          instances = regionSpecificInstances;
+          // Update the main instances array for consistent state
+          setGpuInstances(regionSpecificInstances);
+        }
+      }
+      
+      // Find matching GPUs based on criteria
+      const results = findMatchingGPUs(instances, criteria);
+      setFilteredResults(results);
+      setHasSearched(true);
+      setIsLoading(false);
+      
+      if (results.length === 0) {
+        toast({
+          title: "No Results",
+          description: "No GPU instances match your criteria. Try adjusting your search parameters.",
+        });
+      } else {
+        toast({
+          title: "Search Complete",
+          description: `Found ${results.length} GPU instances matching your criteria.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error during search:", error);
       toast({
-        title: "No Results",
-        description: "No GPU instances match your criteria. Try adjusting your search parameters.",
+        title: "Search Error",
+        description: "An error occurred during the search. Please try again.",
+        variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Search Complete",
-        description: `Found ${results.length} GPU instances matching your criteria.`,
-      });
+      setIsLoading(false);
     }
   };
   
